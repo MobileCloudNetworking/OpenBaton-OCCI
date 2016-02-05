@@ -1,0 +1,51 @@
+group 'org.openbaton.api.occi'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+project.ext {
+    mainClass = 'org.openbaton.api.occi.Startup'
+
+    springBootVersion = '1.2.7.RELEASE'
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.7.RELEASE")
+    }
+}
+apply plugin: 'spring-boot'
+bootRepackage {
+    mainClass = 'org.openbaton.api.occi.Startup'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url "http://get.openbaton.org:8081/nexus/content/groups/public"
+    }
+}
+
+subprojects{
+    apply plugin: 'java'
+    apply plugin: 'maven'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "http://get.openbaton.org:8081/nexus/content/groups/public"
+        }
+    }
+
+}
+
+dependencies {
+    compile 'org.springframework.boot:spring-boot-autoconfigure:' + springBootVersion
+    compile 'org.springframework.boot:spring-boot-starter-logging:1.2.7.RELEASE'
+
+    runtime project(":api")
+}
