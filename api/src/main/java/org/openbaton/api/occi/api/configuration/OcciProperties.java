@@ -13,6 +13,7 @@ public class OcciProperties {
     private String internalURL;
     private String port;
     private String nsdID;
+    private String prefix;
 
     public String getInternalURL() {
         return internalURL;
@@ -36,5 +37,13 @@ public class OcciProperties {
 
     public void setNsdID(String nsdID) {
         this.nsdID = nsdID;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 }

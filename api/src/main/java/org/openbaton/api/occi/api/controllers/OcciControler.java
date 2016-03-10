@@ -44,7 +44,6 @@ public class OcciControler {
     private NFVORequestor nfvoRequestor;
     private NetworkServiceDescriptor nsd;
     private NetworkServiceRecord nsr;
-    private String apiPath = "api/v1/occi";
     private EventEndpoint receivedEndpointCreation;
     private EventEndpoint receivedEndpointError;
     private List<VirtualNetworkFunctionRecord> virtualNFRs;
@@ -71,10 +70,11 @@ public class OcciControler {
     }
 
     @RequestMapping(value = "/default", method = RequestMethod.POST)
-    @ResponseStatus(HttpStatus.OK)
+    @ResponseStatus(HttpStatus.CREATED)
     public String deployAndProvision(@RequestParam(value = "action", defaultValue = "") String action,
-                                           @RequestHeader HttpHeaders headers, HttpServletResponse response) {
-        if (action.equals("deploy")) {
+                                     @RequestHeader HttpHeaders headers, HttpServletResponse response) {
+
+        if (action.equals("deploy") && headers.get("Category").get(0).startsWith("deploy;")) {
             if (nsr == null && nsd != null) {
                 log.debug("Received deploy request");
                 try {
@@ -82,17 +82,18 @@ public class OcciControler {
                     nsr = obManager.deployNSD(nsd.getId());
                     log.debug("Deployed NSR with id " + nsd.getId());
                     String callbackUrl = occiProperties.getInternalURL() + ":" + occiProperties.getPort();
+                    String apiPath = "/api/v1/occi/";
 
                     // Create callback points for finish or error on instantiate
                     EventEndpoint eventEndpointCreation = new EventEndpoint();
                     eventEndpointCreation.setType(EndpointType.REST);
-                    eventEndpointCreation.setEndpoint(callbackUrl + "/" + apiPath + "/" + nsr.getId());
+                    eventEndpointCreation.setEndpoint(callbackUrl + apiPath + nsr.getId());
                     eventEndpointCreation.setEvent(Action.INSTANTIATE_FINISH);
                     eventEndpointCreation.setNetworkServiceId(nsr.getId());
 
                     EventEndpoint eventEndpointError = new EventEndpoint();
                     eventEndpointError.setType(EndpointType.REST);
-                    eventEndpointError.setEndpoint(callbackUrl + "/" + apiPath + "/" + nsr.getId());
+                    eventEndpointError.setEndpoint(callbackUrl + apiPath + nsr.getId());
                     eventEndpointError.setEvent(Action.ERROR);
                     eventEndpointError.setNetworkServiceId(nsr.getId());
 
@@ -100,6 +101,7 @@ public class OcciControler {
                     receivedEndpointCreation = this.nfvoRequestor.getEventAgent().create(eventEndpointCreation);
                     receivedEndpointError = this.nfvoRequestor.getEventAgent().create(eventEndpointError);
 
+                    response.setHeader("Location", occiProperties.getInternalURL() + ":" + occiProperties.getPort() + "/api/v1/occi/default");
                 } catch (SDKException e) {
                     e.printStackTrace();
                 }
@@ -149,16 +151,16 @@ public class OcciControler {
 
     @RequestMapping(value = "/default", method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
-    public String status() throws SDKException {
+    public String status(HttpServletResponse response) throws SDKException {
         if (virtualNFRs != null) {
-            String response = "";
-
             for (VirtualNetworkFunctionRecord record : virtualNFRs) {
                 // TODO: proper formating, this may also go in the return header!
-                response = response + record.getName() + ": " + record.getVnf_address().toString() + '\n';
+                response.addHeader("X-OCCI-Attribute",
+                        occiProperties.getPrefix() + "." +
+                                record.getName() + "=" +
+                                record.getVnf_address().toString().replaceAll("\\[|\\]", "\""));
             }
-
-            return response;
+            return "OK";
         } else {
             // TODO: check hurtleSO for actual behaviour
             return "Deploy not finished yet";

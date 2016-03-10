@@ -17,14 +17,13 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Created by pku on 03.03.16.
+ * Simple wrapperclass around openbaton SDK functionality
  */
 @Service
 public class OpenbatonManager {
 
     @Autowired private NfvoProperties nfvoProperties;
     @Autowired private OcciProperties occiProperties;
-    @Autowired private NetworkServiceDescriptor nsdFromFile;
     private Logger log;
     private NFVORequestor nfvoRequestor;
     private String nsdid;
