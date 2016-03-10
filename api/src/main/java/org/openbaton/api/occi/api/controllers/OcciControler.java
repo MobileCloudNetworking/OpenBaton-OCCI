@@ -47,17 +47,20 @@ public class OcciControler {
     private EventEndpoint receivedEndpointCreation;
     private EventEndpoint receivedEndpointError;
     private List<VirtualNetworkFunctionRecord> virtualNFRs;
+    private String deployStatus;
 
     @PostConstruct
     private void init() {
         this.log = LoggerFactory.getLogger(this.getClass());
         this.nfvoRequestor = new NFVORequestor(nfvoProperties.getOpenbatonUsername(), nfvoProperties.getOpenbatonPasswd(), nfvoProperties.getOpenbatonIP(), nfvoProperties.getOpenbatonPort(), "1");
+        this.deployStatus = "";
     }
 
     @RequestMapping(value = "/default", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.CREATED)
     public String init(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
         log.debug("Received init request");
+        deployStatus = "INIT_IN_PROGRESS";
 
         try {
             nsd = obManager.getNSD();
@@ -65,6 +68,7 @@ public class OcciControler {
             e.printStackTrace();
         }
 
+        deployStatus = "INIT_COMPLETE";
         response.setHeader("Location", occiProperties.getInternalURL() + ":" + occiProperties.getPort() + "/api/v1/occi/default");
         return "OK";
     }
@@ -77,6 +81,7 @@ public class OcciControler {
         if (action.equals("deploy") && headers.get("Category").get(0).startsWith("deploy;")) {
             if (nsr == null && nsd != null) {
                 log.debug("Received deploy request");
+                deployStatus = "CREATE_IN_PROGRESS";
                 try {
                     // Start the deploy
                     nsr = obManager.deployNSD(nsd.getId());
@@ -103,6 +108,7 @@ public class OcciControler {
 
                     response.setHeader("Location", occiProperties.getInternalURL() + ":" + occiProperties.getPort() + "/api/v1/occi/default");
                 } catch (SDKException e) {
+                    deployStatus = "CREATE_FAILED";
                     e.printStackTrace();
                 }
                 return "OK";
@@ -126,6 +132,7 @@ public class OcciControler {
         if (nsr != null) {
             try {
                 log.debug("Received delete request");
+                deployStatus = "DELETE_IN_PROGRESS";
 
                 String nsrId = nsr.getId();
                 obManager.disposeNSR(nsrId);
@@ -139,7 +146,9 @@ public class OcciControler {
 
                 nsr = null;
                 log.debug("Deletion of NSD with ID " + nsrId + "successfull!");
+                deployStatus = "DELETE_COMPLETE";
             } catch (SDKException e) {
+                deployStatus = "DELETE_FAILED";
                 e.printStackTrace();
             }
             return "OK";
@@ -160,11 +169,9 @@ public class OcciControler {
                                 record.getName() + "=" +
                                 record.getVnf_address().toString().replaceAll("\\[|\\]", "\""));
             }
-            return "OK";
-        } else {
-            // TODO: check hurtleSO for actual behaviour
-            return "Deploy not finished yet";
         }
+        response.addHeader("X-OCCI-Attribute", "Status" + "=" + deployStatus);
+        return "OK";
     }
 
     @RequestMapping(value = "{id}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -174,9 +181,11 @@ public class OcciControler {
 
         if (evt.getAction().equals(Action.INSTANTIATE_FINISH)) {
             log.debug("Instantiate finished");
+            deployStatus = "CREATE_COMPLETE";
             virtualNFRs = obManager.statusOfNSR(nsr.getId());
         } else if (evt.getAction().equals(Action.ERROR)) {
             log.debug("Error on instantiate");
+            deployStatus = "CREATE_FAILED";
         }
 
         log.debug("Deleting listening-events");
