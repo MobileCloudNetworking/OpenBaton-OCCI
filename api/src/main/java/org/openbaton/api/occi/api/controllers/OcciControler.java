@@ -4,8 +4,11 @@ import org.openbaton.api.occi.api.OpenbatonEvent;
 import org.openbaton.api.occi.api.OpenbatonManager;
 import org.openbaton.api.occi.api.configuration.NfvoProperties;
 import org.openbaton.api.occi.api.configuration.OcciProperties;
+import org.openbaton.catalogue.mano.common.Ip;
 import org.openbaton.catalogue.mano.descriptor.NetworkServiceDescriptor;
+import org.openbaton.catalogue.mano.descriptor.VirtualDeploymentUnit;
 import org.openbaton.catalogue.mano.record.NetworkServiceRecord;
+import org.openbaton.catalogue.mano.record.VNFCInstance;
 import org.openbaton.catalogue.mano.record.VirtualNetworkFunctionRecord;
 import org.openbaton.catalogue.nfvo.Action;
 import org.openbaton.catalogue.nfvo.EndpointType;
@@ -22,7 +25,10 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * REST-API to respond to OCCI-conform requests.
@@ -48,27 +54,33 @@ public class OcciControler {
     private EventEndpoint receivedEndpointError;
     private List<VirtualNetworkFunctionRecord> virtualNFRs;
     private String deployStatus;
+    private String stackId;
+    private String apiPath;
 
     @PostConstruct
     private void init() {
         this.log = LoggerFactory.getLogger(this.getClass());
         this.nfvoRequestor = new NFVORequestor(nfvoProperties.getOpenbatonUsername(), nfvoProperties.getOpenbatonPasswd(), nfvoProperties.getOpenbatonIP(), nfvoProperties.getOpenbatonPort(), "1");
         this.deployStatus = "";
+        this.apiPath = "/api/v1/occi/";
+        this.stackId = "N/A";
     }
 
     @RequestMapping(value = "/default", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.CREATED)
     public String init(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
         log.debug("Received init request");
-        deployStatus = "INIT_IN_PROGRESS";
+        if (!deployStatus.startsWith("CREATE") && !deployStatus.startsWith("DELETE")) {
+            deployStatus = "INIT_IN_PROGRESS";
 
-        try {
-            nsd = obManager.getNSD();
-        } catch (SDKException | ClassNotFoundException e) {
-            e.printStackTrace();
+            try {
+                nsd = obManager.getNSD();
+            } catch (SDKException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            deployStatus = "INIT_COMPLETE";
         }
-
-        deployStatus = "INIT_COMPLETE";
         response.setHeader("Location", occiProperties.getInternalURL() + ":" + occiProperties.getPort() + "/api/v1/occi/default");
         return "OK";
     }
@@ -82,12 +94,13 @@ public class OcciControler {
             if (nsr == null && nsd != null) {
                 log.debug("Received deploy request");
                 deployStatus = "CREATE_IN_PROGRESS";
+                stackId = "1";
+
                 try {
                     // Start the deploy
                     nsr = obManager.deployNSD(nsd.getId());
                     log.debug("Deployed NSR with id " + nsd.getId());
                     String callbackUrl = occiProperties.getInternalURL() + ":" + occiProperties.getPort();
-                    String apiPath = "/api/v1/occi/";
 
                     // Create callback points for finish or error on instantiate
                     EventEndpoint eventEndpointCreation = new EventEndpoint();
@@ -106,22 +119,19 @@ public class OcciControler {
                     receivedEndpointCreation = this.nfvoRequestor.getEventAgent().create(eventEndpointCreation);
                     receivedEndpointError = this.nfvoRequestor.getEventAgent().create(eventEndpointError);
 
-                    response.setHeader("Location", occiProperties.getInternalURL() + ":" + occiProperties.getPort() + "/api/v1/occi/default");
                 } catch (SDKException e) {
                     deployStatus = "CREATE_FAILED";
                     e.printStackTrace();
                 }
                 return "OK";
             } else {
-                // TODO: check hurtleSO for actual behaviour
-                return "Already deployed!";
+                // TODO: set 200 statuscode
+                return null;
             }
         }
 
         log.debug("Received provison request");
         List<String> occiAttributes = headers.get("X-OCCI-Attribute");
-        if (occiAttributes != null)
-            occiAttributes.forEach(System.out::println);
 
         return "OK";
     }
@@ -145,32 +155,53 @@ public class OcciControler {
                 }
 
                 nsr = null;
-                log.debug("Deletion of NSD with ID " + nsrId + "successfull!");
+                log.debug("Deletion of NSR with ID " + nsrId + "successfull!");
                 deployStatus = "DELETE_COMPLETE";
+                stackId = "N/A";
             } catch (SDKException e) {
                 deployStatus = "DELETE_FAILED";
                 e.printStackTrace();
             }
             return "OK";
         } else {
-            // TODO: check hurtleSO for actual behaviour
-            return "Not deployed yet";
+            // TODO: set 404 statuscode
+            return null;
         }
     }
 
     @RequestMapping(value = "/default", method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     public String status(HttpServletResponse response) throws SDKException {
-        if (virtualNFRs != null) {
+        if (Objects.equals(deployStatus, "CREATE_COMPLETE")) {
             for (VirtualNetworkFunctionRecord record : virtualNFRs) {
                 // TODO: proper formating, this may also go in the return header!
-                response.addHeader("X-OCCI-Attribute",
-                        occiProperties.getPrefix() + "." +
-                                record.getName() + "=" +
-                                record.getVnf_address().toString().replaceAll("\\[|\\]", "\""));
+                String attributePrefix = occiProperties.getPrefix() + ".";
+                String endpoint = "";
+
+                for (VirtualDeploymentUnit vdu: record.getVdu()) {
+                    for (VNFCInstance vnfc: vdu.getVnfc_instance()) {
+                        // Get all private Ip's
+                        for (Ip privateIp : vnfc.getIps()) {
+                            response.addHeader("X-OCCI-Attribute", attributePrefix + record.getName() + "." + privateIp.getNetName() + ".private=\"" + privateIp.getIp() + "\"");
+                            endpoint = "\"" + privateIp.getIp() + "\"";
+                        }
+                        // Get all public Ip's
+                        for (Ip publicIp : vnfc.getFloatingIps()) {
+                            response.addHeader("X-OCCI-Attribute", attributePrefix + record.getName() + "." + publicIp.getNetName() + ".public=\"" + publicIp.getIp() + "\"");
+                            endpoint = "\"" + publicIp.getIp() + "\"";
+                        }
+                    }
+                }
+                // Set "endpoint" Ip, private if no public Ip's were found, public otherwise.
+                response.addHeader("X-OCCI-Attribute", attributePrefix + record.getName() + "=" + endpoint);
             }
         }
-        response.addHeader("X-OCCI-Attribute", "Status" + "=" + deployStatus);
+
+        if (deployStatus != "") {
+            response.addHeader("X-OCCI-Attribute", "occi.stack.state=\"" + deployStatus + "\"");
+        }
+        response.addHeader("X-OCCI-Attribute", "occi.stack.id=\"" + "1\"");
+        response.addHeader("X-OCCI-Attribute", "occi.core.id=\"" + apiPath + "default\"");
         return "OK";
     }
 
@@ -181,8 +212,8 @@ public class OcciControler {
 
         if (evt.getAction().equals(Action.INSTANTIATE_FINISH)) {
             log.debug("Instantiate finished");
-            deployStatus = "CREATE_COMPLETE";
             virtualNFRs = obManager.statusOfNSR(nsr.getId());
+            deployStatus = "CREATE_COMPLETE";
         } else if (evt.getAction().equals(Action.ERROR)) {
             log.debug("Error on instantiate");
             deployStatus = "CREATE_FAILED";
