@@ -169,7 +169,7 @@ public class OcciControler {
         }
     }
 
-    @RequestMapping(value = "/default", method = RequestMethod.GET, produces = "text/plain")
+    @RequestMapping(value = "/default", method = RequestMethod.GET)
     @ResponseStatus(HttpStatus.OK)
     public String status(HttpServletResponse response) throws SDKException {
         if (Objects.equals(deployStatus, "CREATE_COMPLETE")) {
