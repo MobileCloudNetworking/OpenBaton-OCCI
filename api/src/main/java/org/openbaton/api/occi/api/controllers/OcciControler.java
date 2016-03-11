@@ -66,7 +66,7 @@ public class OcciControler {
         this.stackId = "N/A";
     }
 
-    @RequestMapping(value = "/default", method = RequestMethod.PUT)
+    @RequestMapping(value = "/default", method = RequestMethod.PUT, produces = "text/plain")
     @ResponseStatus(HttpStatus.CREATED)
     public String init(@RequestHeader HttpHeaders headers, HttpServletResponse response) {
         log.debug("Received init request");
@@ -85,7 +85,7 @@ public class OcciControler {
         return "OK";
     }
 
-    @RequestMapping(value = "/default", method = RequestMethod.POST)
+    @RequestMapping(value = "/default", method = RequestMethod.POST, produces = "text/plain")
     @ResponseStatus(HttpStatus.CREATED)
     public String deployAndProvision(@RequestParam(value = "action", defaultValue = "") String action,
                                      @RequestHeader HttpHeaders headers, HttpServletResponse response) {
@@ -136,7 +136,7 @@ public class OcciControler {
         return "OK";
     }
 
-    @RequestMapping(value = "/default", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/default", method = RequestMethod.DELETE, produces = "text/plain")
     @ResponseStatus(HttpStatus.OK)
     public String dispose() {
         if (nsr != null) {
@@ -169,7 +169,7 @@ public class OcciControler {
         }
     }
 
-    @RequestMapping(value = "/default", method = RequestMethod.GET)
+    @RequestMapping(value = "/default", method = RequestMethod.GET, produces = "text/plain")
     @ResponseStatus(HttpStatus.OK)
     public String status(HttpServletResponse response) throws SDKException {
         if (Objects.equals(deployStatus, "CREATE_COMPLETE")) {
@@ -197,7 +197,7 @@ public class OcciControler {
             }
         }
 
-        if (deployStatus != "") {
+        if (!Objects.equals(deployStatus, "")) {
             response.addHeader("X-OCCI-Attribute", "occi.stack.state=\"" + deployStatus + "\"");
         }
         response.addHeader("X-OCCI-Attribute", "occi.stack.id=\"" + "1\"");
