@@ -69,7 +69,7 @@ end() {
 }
 
 usage() {
-    echo "usage: ./occi-api.sh [compile|start|stop|test|kill|clean]"
+    echo "usage: ./occi-api.sh [compile|init|start|stop|restart|test|kill|clean]"
 }
 
 if [ $# -eq 0 ]
