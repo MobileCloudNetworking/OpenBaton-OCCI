@@ -57,6 +57,7 @@ curl -v -X POST http://127.0.0.1:8082/api/v1/occi/default?action=deploy
           -H 'Category: deploy; scheme="http://schemas.mobile-cloud-networking.eu/occi/service#"'
           -H 'X-Auth-Token: '$KID
           -H 'X-Tenant-Name: '$TENANT
+          -H 'X-OCCI-Attribute: occi.core.id=CHOOSE_AN_IDENTIFIER'
 ```
 
 Trigger delete of service instance:
@@ -65,6 +66,7 @@ Trigger delete of service instance:
 curl -v -X DELETE http://127.0.0.1:8082/api/v1/occi/default
           -H 'X-Auth-Token: '$KID
           -H 'X-Tenant-Name: '$TENANT
+          -H 'X-OCCI-Attribute: occi.core.id=USE_THE_CHOSEN_IDENTIFIER'
 ```
 
 ### Supported by
