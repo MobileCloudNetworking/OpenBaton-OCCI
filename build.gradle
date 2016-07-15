@@ -10,11 +10,16 @@ project.ext {
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.7.RELEASE")
+        classpath("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.3.2")
     }
 }
+apply plugin: "com.github.sherter.google-java-format"
 apply plugin: 'spring-boot'
 bootRepackage {
     mainClass = 'org.openbaton.api.occi.Startup'
