@@ -7,52 +7,52 @@ import org.springframework.stereotype.Service;
  * Created by maa on 22.01.16.
  */
 @Service
-@ConfigurationProperties(prefix="nfvo")
+@ConfigurationProperties(prefix = "nfvo")
 public class NfvoProperties {
 
-    private String openbatonIP;
-    private String openbatonPort;
-    private String openbatonUsername;
-    private String openbatonPasswd;
-    private String imageName;
+  private String openbatonIP;
+  private String openbatonPort;
+  private String openbatonUsername;
+  private String openbatonPasswd;
+  private String imageName;
 
-    public String getOpenbatonIP() {
-        return openbatonIP;
-    }
+  public String getOpenbatonIP() {
+    return openbatonIP;
+  }
 
-    public void setOpenbatonIP(String openbatonIP) {
-        this.openbatonIP = openbatonIP;
-    }
+  public void setOpenbatonIP(String openbatonIP) {
+    this.openbatonIP = openbatonIP;
+  }
 
-    public String getOpenbatonPort() {
-        return openbatonPort;
-    }
+  public String getOpenbatonPort() {
+    return openbatonPort;
+  }
 
-    public void setOpenbatonPort(String openbatonPort) {
-        this.openbatonPort = openbatonPort;
-    }
+  public void setOpenbatonPort(String openbatonPort) {
+    this.openbatonPort = openbatonPort;
+  }
 
-    public String getOpenbatonUsername() {
-        return openbatonUsername;
-    }
+  public String getOpenbatonUsername() {
+    return openbatonUsername;
+  }
 
-    public void setOpenbatonUsername(String openbatonUsername) {
-        this.openbatonUsername = openbatonUsername;
-    }
+  public void setOpenbatonUsername(String openbatonUsername) {
+    this.openbatonUsername = openbatonUsername;
+  }
 
-    public String getOpenbatonPasswd() {
-        return openbatonPasswd;
-    }
+  public String getOpenbatonPasswd() {
+    return openbatonPasswd;
+  }
 
-    public void setOpenbatonPasswd(String openbatonPasswd) {
-        this.openbatonPasswd = openbatonPasswd;
-    }
+  public void setOpenbatonPasswd(String openbatonPasswd) {
+    this.openbatonPasswd = openbatonPasswd;
+  }
 
-    public String getImageName() {
-        return imageName;
-    }
+  public String getImageName() {
+    return imageName;
+  }
 
-    public void setImageName(String imageName) {
-        this.imageName = imageName;
-    }
+  public void setImageName(String imageName) {
+    this.imageName = imageName;
+  }
 }

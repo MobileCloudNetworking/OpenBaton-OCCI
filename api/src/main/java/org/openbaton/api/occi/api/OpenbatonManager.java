@@ -22,43 +22,49 @@ import java.util.List;
 @Service
 public class OpenbatonManager {
 
-    @Autowired private NfvoProperties nfvoProperties;
-    @Autowired private OcciProperties occiProperties;
-    private Logger log;
-    private NFVORequestor nfvoRequestor;
-    private String nsdId;
+  @Autowired private NfvoProperties nfvoProperties;
+  @Autowired private OcciProperties occiProperties;
+  private Logger log;
+  private NFVORequestor nfvoRequestor;
+  private String nsdId;
 
-    @PostConstruct
-    private void init() throws IOException {
-        this.log = LoggerFactory.getLogger(this.getClass());
-        this.nfvoRequestor = new NFVORequestor(nfvoProperties.getOpenbatonUsername(), nfvoProperties.getOpenbatonPasswd(), nfvoProperties.getOpenbatonIP(), nfvoProperties.getOpenbatonPort(), "1");
-        this.nsdId = occiProperties.getNsdID();
-    }
+  @PostConstruct
+  private void init() throws IOException {
+    this.log = LoggerFactory.getLogger(this.getClass());
+    this.nfvoRequestor =
+        new NFVORequestor(
+            nfvoProperties.getOpenbatonUsername(),
+            nfvoProperties.getOpenbatonPasswd(),
+            nfvoProperties.getOpenbatonIP(),
+            nfvoProperties.getOpenbatonPort(),
+            "1");
+    this.nsdId = occiProperties.getNsdID();
+  }
 
-    public NetworkServiceDescriptor getNSD() throws SDKException, ClassNotFoundException {
-        // TODO: check if NSD is already uploaded and do so if not
-        // TODO: check for vnfd's if NSD has to be uploaded
-        log.debug("Receiving NSD ID: " + this.nsdId);
-        return nfvoRequestor.getNetworkServiceDescriptorAgent().findById(nsdId);
-    }
+  public NetworkServiceDescriptor getNSD() throws SDKException, ClassNotFoundException {
+    // TODO: check if NSD is already uploaded and do so if not
+    // TODO: check for vnfd's if NSD has to be uploaded
+    log.debug("Receiving NSD ID: " + this.nsdId);
+    return nfvoRequestor.getNetworkServiceDescriptorAgent().findById(nsdId);
+  }
 
-    public NetworkServiceDescriptor getNSD(String nsdId) throws SDKException, ClassNotFoundException {
-        log.debug("Receiving NSD ID: " + nsdId);
-        return nfvoRequestor.getNetworkServiceDescriptorAgent().findById(nsdId);
-    }
+  public NetworkServiceDescriptor getNSD(String nsdId) throws SDKException, ClassNotFoundException {
+    log.debug("Receiving NSD ID: " + nsdId);
+    return nfvoRequestor.getNetworkServiceDescriptorAgent().findById(nsdId);
+  }
 
-    public NetworkServiceRecord deployNSD(String id) throws SDKException {
-        log.debug("Deploying NSD with id " + id);
-        return nfvoRequestor.getNetworkServiceRecordAgent().create(id);
-    }
+  public NetworkServiceRecord deployNSD(String id) throws SDKException {
+    log.debug("Deploying NSD with id " + id);
+    return nfvoRequestor.getNetworkServiceRecordAgent().create(id);
+  }
 
-    public void disposeNSR(String id) throws SDKException {
-        log.debug("Disposing NSR with id " + id);
-        nfvoRequestor.getNetworkServiceRecordAgent().delete(id);
-    }
+  public void disposeNSR(String id) throws SDKException {
+    log.debug("Disposing NSR with id " + id);
+    nfvoRequestor.getNetworkServiceRecordAgent().delete(id);
+  }
 
-    public List<VirtualNetworkFunctionRecord> statusOfNSR(String id) throws SDKException {
-        log.debug("Getting status of NSR with id " + id);
-        return nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecords(id);
-    }
+  public List<VirtualNetworkFunctionRecord> statusOfNSR(String id) throws SDKException {
+    log.debug("Getting status of NSR with id " + id);
+    return nfvoRequestor.getNetworkServiceRecordAgent().getVirtualNetworkFunctionRecords(id);
+  }
 }

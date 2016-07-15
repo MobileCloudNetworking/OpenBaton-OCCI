@@ -11,7 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan(basePackages = "org.openbaton")
 public class Startup {
 
-    public static void main(String[] args) {
-        SpringApplication.run(Startup.class);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(Startup.class);
+  }
 }

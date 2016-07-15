@@ -8,24 +8,24 @@ import java.io.Serializable;
 /**
  * Created by maa on 21.10.15.
  */
-public class OpenbatonEvent implements Serializable{
+public class OpenbatonEvent implements Serializable {
 
-    private Action action;
-    private NetworkServiceRecord payload;
+  private Action action;
+  private NetworkServiceRecord payload;
 
-    public Action getAction() {
-        return action;
-    }
+  public Action getAction() {
+    return action;
+  }
 
-    public void setAction(Action action) {
-        this.action = action;
-    }
+  public void setAction(Action action) {
+    this.action = action;
+  }
 
-    public NetworkServiceRecord getPayload() {
-        return payload;
-    }
+  public NetworkServiceRecord getPayload() {
+    return payload;
+  }
 
-    public void setPayload(NetworkServiceRecord payload) {
-        this.payload = payload;
-    }
+  public void setPayload(NetworkServiceRecord payload) {
+    this.payload = payload;
+  }
 }
